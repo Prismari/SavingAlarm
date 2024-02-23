@@ -7,6 +7,7 @@
 
 import Foundation
 import SwiftData
+import SwiftUI
 
 @Model
 final class Entry {
@@ -21,9 +22,22 @@ final class Entry {
     }
 }
 
-enum SourceOfMoney: String, Hashable, Codable {
+enum SourceOfMoney: String, Hashable, Codable, CaseIterable {
     case appoalimStocks = "Apoalim Stoks"
     case binance = "Binance"
     case kupatGemelHaAshka = "Kupat gemel haashka"
     case appoalimCurrency = "Appoalim USD"
+    
+    func getColor() -> Color {
+        switch self {
+        case .appoalimStocks:
+            return .myPrimary
+        case .binance:
+            return .secondaryBackground
+        case .kupatGemelHaAshka:
+            return .tetraryBackground
+        case .appoalimCurrency:
+            return .quaternaryBackground
+        }
+    }
 }

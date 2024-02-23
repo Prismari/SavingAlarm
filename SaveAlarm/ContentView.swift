@@ -11,8 +11,13 @@ import SwiftData
 struct ContentView: View {
     @Environment(\.modelContext) private var modelContext
     @Query private var items: [Entry]
+    let columns = [
+            GridItem(.flexible()),
+            GridItem(.flexible())
+        ]
     
     @State private var showingAlert = false
+    @State private var isFullSummPresented = true
     @State private var source = ""
     @State private var sum = ""
     
@@ -22,21 +27,50 @@ struct ContentView: View {
             VStack(alignment: .leading) {
                 Text("Nice to see you back!")
                     .font(.largeTitle)
-                    
-                Text("Already saved:")
-                    .font(.title)
-                    
-                ZStack {
-                    CircularProgressView(progress: Double(items.map { $0.sum }.reduce(0, +)))
-                        .frame(width: 250, height: 250, alignment: .center)
-                        .padding(40)
-                    Text("\(items.map { $0.sum }.reduce(0, +), format: .currency(code: "USD"))")
-                        .bold()
-                        .font(.largeTitle)
-                }
-                .background(Color.secondaryBackground)
-                .cornerRadius(50)
                 
+                if isFullSummPresented {
+                    Text("Already saved:")
+                        .font(.title)
+                    ZStack {
+                        CircularProgressView(progress: Double(items.map { $0.sum }.reduce(0, +)), lineWidth: 30)
+                            .frame(width: 250, height: 250, alignment: .center)
+                            .padding(40)
+                        Text("\(items.map { $0.sum }.reduce(0, +), format: .currency(code: "USD"))")
+                            .bold()
+                            .font(.largeTitle)
+                            .colorInvert()
+                    }
+                    .background(Color.myPrimary)
+                    .cornerRadius(50)
+                } else {
+                    Text("Saved in every source")
+                        .font(.title)
+                    LazyVGrid(columns: columns) {
+                        ForEach(SourceOfMoney.allCases, id: \.rawValue) { source in
+                            VStack {
+                                Text(source.rawValue)
+                                ZStack {
+                                    CircularProgressView(
+                                        progress: Double(items.compactMap { item in
+                                            return item.source == source.rawValue ? item.sum : nil
+                                        }.reduce(0, +)),
+                                        lineWidth: 15)
+                                    .frame(width: 110, height: 110, alignment: .center)
+                                    .padding(20)
+                                    Text("\(items.compactMap { return $0.source == source.rawValue ? $0.sum : nil }.reduce(0, +), format: .currency(code: "USD"))")
+                                        .font(.callout)
+                                        .colorInvert()
+                                }
+                                .background(source.getColor())
+                                .cornerRadius(35)
+                            }
+                        }
+                    }
+                }
+                
+            }
+            .onTapGesture {
+                isFullSummPresented.toggle()
             }
             
             .tabItem {
@@ -104,21 +138,22 @@ struct ContentView: View {
 struct CircularProgressView: View {
     // 1
     let progress: Double
+    let lineWidth: CGFloat
     
     var body: some View {
         ZStack {
             Circle()
                 .stroke(
                     Color.black.opacity(0.5),
-                    lineWidth: 30
+                    lineWidth: lineWidth
                 )
             Circle()
-                // 2
+            // 2
                 .trim(from: 0, to: progress / 10000)
                 .stroke(
                     Color.black,
                     style: StrokeStyle(
-                        lineWidth: 30,
+                        lineWidth: lineWidth,
                         lineCap: .round
                     )
                 )
